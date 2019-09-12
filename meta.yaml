@@ -16,6 +16,7 @@ requirements:
   run:
     - python
     - numpy
+    - xraylib
 
 test:
   # Python imports

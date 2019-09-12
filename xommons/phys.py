@@ -49,6 +49,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
+import xraylib
 
 
 def energy_to_wavelength(energy_kev):
@@ -60,3 +61,26 @@ def wavelength_to_energy(lmbda_nm):
 
     return 1.24 / lmbda_nm
 
+
+def ri_delta(compound, energy_kev, density):
+    """
+    Return delta part of the refractive index of a certain compound. Convention follows
+    n = 1 - \delta - i\beta.
+    :param compound: str
+    :param energy_kev: float
+    :param density: float; in g/cm3
+    :return: float
+    """
+    return 1 - xraylib.Refractive_Index_Re(compound, energy_kev, density)
+
+
+def ri_beta(compound, energy_kev, density):
+    """
+    Return beta part of the refractive index of a certain compound. Convention follows
+    n = 1 - \delta - i\beta.
+    :param compound: str
+    :param energy_kev: float
+    :param density: float; in g/cm3
+    :return: float
+    """
+    return xraylib.Refractive_Index_Im(compound, energy_kev, density)
