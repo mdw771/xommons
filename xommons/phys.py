@@ -53,11 +53,21 @@ import xraylib
 
 
 def energy_to_wavelength(energy_kev):
+    """
+    Returns wavelength in nm.
+    :param energy_kev:
+    :return:
+    """
 
     return 1.24 / energy_kev
 
 
 def wavelength_to_energy(lmbda_nm):
+    """
+    Returns energy in keV.
+    :param lmbda_nm:
+    :return:
+    """
 
     return 1.24 / lmbda_nm
 

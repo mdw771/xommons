@@ -56,13 +56,13 @@ from xommons.phys import *
 __all__ = ['depth_of_focus',]
 
 
-def depth_of_focus(psize_nm, energy_kev=None, lmbda_nm=None, unit='nm'):
+def depth_of_focus(psize_nm, energy_kev=None, lmbda_nm=None, prefactor=5.2, unit='nm'):
     """
     Calculate the depth of focus in selected unit.
     :param psize_nm: float
     :param energy_kev: float
     :param lmbda_nm: float
-    :param unit: str; can only be 'angstrom', 'nm', 'um', 'cm', 'm'
+    :param unit: str; can only be 'angstrom', 'nm', 'um', 'cm', 'm', 'px'
     :return: float
     """
 
@@ -73,9 +73,10 @@ def depth_of_focus(psize_nm, energy_kev=None, lmbda_nm=None, unit='nm'):
                  'um': 1e-3,
                  'mm': 1e-6,
                  'cm': 1e-7,
-                 'm': 1e-9}
+                 'm': 1e-9,
+                 'px': 1. / psize_nm}
 
     if lmbda_nm is None:
         lmbda_nm = energy_to_wavelength(energy_kev)
 
-    return 5.2 * psize_nm ** 2 / lmbda_nm * unit_dict[unit]
+    return prefactor * psize_nm ** 2 / lmbda_nm * unit_dict[unit]
