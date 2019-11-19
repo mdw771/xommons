@@ -67,7 +67,7 @@ def gen_mesh(max, shape):
 
 def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=False):
     """Get Fresnel propagation kernel for TF algorithm.
-
+       Note that the function uses the n = 1 - delta - i*beta and exp(-ikz) convention.
     Parameters:
     -----------
     simulator : :class:`acquisition.Simulator`
@@ -80,9 +80,14 @@ def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=False):
     v_max = 1. / (2. * voxel_nm[1])
     u, v = gen_mesh([v_max, u_max], grid_shape[0:2])
     if fresnel_approx:
-        H = np.exp(1j * k * dist_nm) * np.exp(-1j * PI * lmbda_nm * dist_nm * (u**2 + v**2))
+        H = np.exp(1j * PI * lmbda_nm * dist_nm * (u**2 + v**2))
     else:
-        H = np.exp(1j * 2 * PI * dist_nm / lmbda_nm * np.sqrt(1 - lmbda_nm ** 2 * (u**2 + v**2) + 0j))
+        quad = 1 - lmbda_nm ** 2 * (u**2 + v**2)
+        quad_inner = np.clip(quad, a_min=0, a_max=None)
+        quad_inner = quad_inner + 0j
+        H = np.exp(-1j * 2 * PI * dist_nm / lmbda_nm * np.sqrt(quad_inner))
+        # quad_outer = -np.clip(quad, a_min=None, a_max=0)
+        # H = H * np.exp(2 * PI * dist_nm / lmbda_nm * np.sqrt(quad_outer))
 
     return H
 
@@ -110,6 +115,50 @@ def get_kernel_ir(dist_nm, lmbda_nm, voxel_nm, grid_shape):
     H = np.fft.fftshift(np.fft.fft2(h)) * voxel_nm[0] * voxel_nm[1]
 
     return H
+
+
+def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=False):
+    """
+    Perform Fresnel propagation on a batch of wavefields.
+    :param wavefield: complex wavefield with shape [n_batches, n_y, n_x].
+    :param energy_ev: float.
+    :param psize_cm: size-3 vector with pixel size ([dy, dx, dz]).
+    :param dist_cm: propagation distance.
+    :return:
+    """
+    minibatch_size = wavefield.shape[0]
+    grid_shape = wavefield.shape[1:]
+    voxel_nm = np.array(psize_cm) * 1.e7
+    lmbda_nm = 1240. / energy_ev
+    mean_voxel_nm = np.prod(voxel_nm) ** (1. / 3)
+    size_nm = np.array(grid_shape) * voxel_nm
+    dist_nm = dist_cm * 1e7
+
+    h = get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=fresnel_approx)
+
+    wavefield = ifft2(ifftshift(fftshift(fft2(wavefield), axes=[1, 2]) * h, axes=[1, 2]))
+
+    return wavefield
+
+
+def modulate_wavefield(wavefield, delta_slice, beta_slice, energy_ev, dist_cm):
+    """
+    Perform Fresnel propagation on a batch of wavefields.
+    :param wavefield: complex wavefield with shape [n_batches, n_y, n_x].
+    :param delta_slice: delta slice batch with shape [n_batches, n_y, n_x].
+    :param beta_slice: beta slice batch with shape [n_batches, n_y, n_x].
+    :param energy_ev: float.
+    :param psize_cm: size-3 vector with pixel size ([dy, dx, dz]).
+    :param dist_cm: propagation distance.
+    :return:
+    """
+    lmbda_nm = 1240. / energy_ev
+    dist_nm = dist_cm * 1e7
+    k = 2. * PI * dist_nm / lmbda_nm
+    c = np.exp(1j * k * delta_slice) * np.exp(-k * beta_slice)
+    wavefield = wavefield * c
+
+    return wavefield
 
 
 def multislice_propagate(grid_delta_batch, grid_beta_batch, probe_real, probe_imag, energy_ev, psize_cm, free_prop_cm=None, return_intermediate=False):
