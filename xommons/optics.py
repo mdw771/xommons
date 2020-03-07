@@ -80,3 +80,15 @@ def depth_of_focus(psize_nm, energy_kev=None, lmbda_nm=None, prefactor=5.2, unit
         lmbda_nm = energy_to_wavelength(energy_kev)
 
     return prefactor * psize_nm ** 2 / lmbda_nm * unit_dict[unit]
+
+
+def real_imag_to_mag_phase(realpart, imagpart):
+
+    a = realpart + 1j * imagpart
+    return np.abs(a), np.angle(a)
+
+
+def mag_phase_to_real_imag(mag, phase):
+
+    a = mag * np.exp(1j * phase)
+    return a.real, a.imag

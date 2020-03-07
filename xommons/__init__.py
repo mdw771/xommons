@@ -53,3 +53,4 @@ from xommons.phys import *
 from xommons.optics import *
 from xommons.propagation import *
 from xommons.constants import *
+from xommons.util import *

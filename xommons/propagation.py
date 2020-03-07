@@ -65,7 +65,7 @@ def gen_mesh(max, shape):
     return res
 
 
-def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=False):
+def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=True):
     """Get Fresnel propagation kernel for TF algorithm.
        Note that the function uses the n = 1 - delta - i*beta and exp(-ikz) convention.
     Parameters:
@@ -117,7 +117,7 @@ def get_kernel_ir(dist_nm, lmbda_nm, voxel_nm, grid_shape):
     return H
 
 
-def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=False):
+def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=False, pad=0):
     """
     Perform Fresnel propagation on a batch of wavefields.
     :param wavefield: complex wavefield with shape [n_batches, n_y, n_x].
@@ -127,7 +127,12 @@ def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=Fa
     :return:
     """
     minibatch_size = wavefield.shape[0]
+    
+    if pad > 0:
+        wavefield = np.pad(wavefield, [[0, 0], [pad, pad], [pad, pad]], mode='edge')
+    
     grid_shape = wavefield.shape[1:]
+    if len(psize_cm) == 1: psize_cm = [psize_cm] * 3
     voxel_nm = np.array(psize_cm) * 1.e7
     lmbda_nm = 1240. / energy_ev
     mean_voxel_nm = np.prod(voxel_nm) ** (1. / 3)
@@ -137,6 +142,8 @@ def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=Fa
     h = get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=fresnel_approx)
 
     wavefield = ifft2(ifftshift(fftshift(fft2(wavefield), axes=[1, 2]) * h, axes=[1, 2]))
+    
+    if pad > 0: wavefield = wavefield[:, pad:-pad, pad:-pad]
 
     return wavefield
 

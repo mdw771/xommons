@@ -24,7 +24,7 @@ def main(arg):
         dxchange.write_tiff(abs(a), os.path.splitext(os.path.basename(args.file))[0] + '_mag', dtype='float32',
                             overwrite=True)
     elif args.type == 'phase':
-        dxchange.write_tiff(np.angle(a), os.path.splitext(os.path.basename(args.file))[0] + '_mag', dtype='float32',
+        dxchange.write_tiff(np.angle(a), os.path.splitext(os.path.basename(args.file))[0] + '_phase', dtype='float32',
                             overwrite=True)
     return
 
