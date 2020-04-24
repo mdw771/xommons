@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function
+
+import argparse
+import os
+import sys
+import numpy as np
+import dxchange
+import h5py
+
+def main(arg):
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file")
+    parser.add_argument("--type", help="magnitude or phase",default='magnitude')
+    parser.add_argument("--dset", help="dataset name",default='wavefield')
+    args = parser.parse_args()
+
+    f = h5py.File(args.file)
+    a = f[args.dset][...]
+    if args.type == 'magnitude':
+        dxchange.write_tiff(abs(a), os.path.splitext(os.path.basename(args.file))[0] + '_mag', dtype='float32',
+                            overwrite=True)
+    elif args.type == 'phase':
+        dxchange.write_tiff(np.angle(a), os.path.splitext(os.path.basename(args.file))[0] + '_phase', dtype='float32',
+                            overwrite=True)
+    return
+
+if __name__ == '__main__':
+    main(sys.argv)
