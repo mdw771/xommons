@@ -22,6 +22,10 @@ import warnings
 import sys
 
 
+matplotlib.rcParams['pdf.fonttype'] = 'truetype'
+fontProperties = {'family': 'serif', 'serif': ['Times New Roman'], 'weight': 'normal', 'size': 12}
+plt.rc('font', **fontProperties)
+
 def generate_disk(shape, radius, anti_aliasing=5):
     shape = np.array(shape)
     radius = int(radius)
@@ -45,7 +49,7 @@ def generate_ring(shape, radius, anti_aliasing=5):
     return disk1 - disk2
 
 
-def fourier_ring_correlation(obj, ref, step_size=1, save_path='frc', save_mask=False, save_fname='fsc', threshold_curve=False):
+def fourier_ring_correlation(obj, ref, step_size=1, save_path=None, save_mask=True, save_fname='fsc', threshold_curve=False):
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -58,7 +62,8 @@ def fourier_ring_correlation(obj, ref, step_size=1, save_path='frc', save_mask=F
     f_ref_2 = np.real(f_ref * np.conjugate(f_ref))
     radius_ls = np.arange(1, radius_max, step_size)
     fsc_ls = []
-    np.save(os.path.join(save_path, 'radii.npy'), radius_ls)
+    if save_path is not None:
+        np.save(os.path.join(save_path, 'radii.npy'), radius_ls)
 
     for rad in radius_ls:
         print(rad)
@@ -72,12 +77,18 @@ def fourier_ring_correlation(obj, ref, step_size=1, save_path='frc', save_mask=F
         fsc = abs(np.sum(f_prod * mask))
         fsc /= np.sqrt(np.sum(f_obj_2 * mask) * np.sum(f_ref_2 * mask))
         fsc_ls.append(fsc)
-        np.save(os.path.join(save_path, '{}.npy'.format(save_fname)), fsc_ls)
+        if save_path is not None:
+            np.save(os.path.join(save_path, '{}.npy'.format(save_fname)), fsc_ls)
+    return np.array(fsc_ls)
 
-    matplotlib.rcParams['pdf.fonttype'] = 'truetype'
-    fontProperties = {'family': 'serif', 'serif': ['Times New Roman'], 'weight': 'normal', 'size': 12}
-    plt.rc('font', **fontProperties)
-    plt.plot(radius_ls.astype(float) / radius_ls[-1], fsc_ls, label=save_fname)
+
+def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', threshold_curve=True):
+
+    if radius_max == 'auto':
+        radius_max = len(frc) + 1
+    radius_ls = np.arange(1, radius_max, step_size)
+
+    plt.plot(radius_ls.astype(float) / radius_ls[-1], frc, label=os.path.basename(output_fname)[:-4])
     plt.xlabel('Spatial frequency (1 / Nyquist)')
     plt.ylabel('FRC')
 
@@ -86,7 +97,7 @@ def fourier_ring_correlation(obj, ref, step_size=1, save_path='frc', save_mask=F
         t = 0.2071 + 1.9102 / np.sqrt(n_ls) / (1.2071 + 0.9102 / np.sqrt(n_ls))
         plt.plot(radius_ls.astype(float) / radius_ls[-1], t, label='1/2-bit threshold')
     plt.legend()
-    plt.savefig(os.path.join(save_path, '{}.pdf'.format(save_fname)), format='pdf')
+    plt.savefig(output_fname, format='pdf')
 
 
 def gaussian_fit_2d(img, n_iter=1000, verbose=False):
@@ -138,3 +149,33 @@ def gaussian(height, center_x, center_y, width_x, width_y):
     width_y = float(width_y)
     return lambda x,y: height*np.exp(
                 -(((center_x-x)/width_x)**2+((center_y-y)/width_y)**2)/2)
+
+
+def find_frc_crossing(frc, radius_max='auto', step_size=1):
+
+    if radius_max == 'auto':
+        radius_max = len(frc) + 1
+    radius_ls = np.arange(1, radius_max, step_size)
+    radius = radius_ls.astype('float') / radius_ls[-1]
+    r = 2 * np.pi * radius_ls
+    t = 0.2071 + 1.9102 / np.sqrt(r) / (1.2071 + 0.9102 / np.sqrt(r))
+
+    # Find all crossings
+    cross = []
+    for i in range(len(radius) - 2):
+        if max(t[i:i + 2]) > min(frc[i:i + 2]) and min(t[i:i + 2]) < max(frc[i:i + 2]):
+            cross.append(radius[i])
+    if len(cross) == 0:
+        cross.append(1)
+
+    # Remove outliers
+    while len(cross) > 1:
+        if cross[-1] - cross[0] > 0.5:
+            cross.pop()
+        else:
+            break
+
+    # Take mean of crossings
+    crossing = np.mean(cross)
+    err = cross[-1] - cross[0]
+    return crossing, err
