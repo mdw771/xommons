@@ -65,7 +65,7 @@ def gen_mesh(max, shape):
     return res
 
 
-def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=False):
+def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=True):
     """Get Fresnel propagation kernel for TF algorithm.
 
     Parameters:
@@ -80,9 +80,9 @@ def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=False):
     v_max = 1. / (2. * voxel_nm[1])
     u, v = gen_mesh([v_max, u_max], grid_shape[0:2])
     if fresnel_approx:
-        H = np.exp(1j * k * dist_nm) * np.exp(-1j * PI * lmbda_nm * dist_nm * (u**2 + v**2))
+        H = np.exp(-1j * PI * lmbda_nm * dist_nm * (u**2 + v**2))
     else:
-        H = np.exp(1j * 2 * PI * dist_nm / lmbda_nm * np.sqrt(1 - lmbda_nm ** 2 * (u**2 + v**2) + 0j))
+        H = np.exp(-1j * 2 * PI * dist_nm / lmbda_nm * np.sqrt(1 - lmbda_nm ** 2 * (u**2 + v**2) + 0j))
 
     return H
 
@@ -176,3 +176,29 @@ def multislice_propagate(grid_delta_batch, grid_beta_batch, probe_real, probe_im
         return wavefront, wavefront_ls
     else:
         return wavefront
+
+
+def fresnel_propagate(probe_real, probe_imag, energy_ev, psize_cm, dist_cm):
+    """
+    Perform multislice propagation on a batch of 3D objects.
+    :param grid_delta_batch: 4D array for object delta with shape [n_batches, n_y, n_x, n_z].
+    :param grid_beta_batch: 4D array for object beta with shape [n_batches, n_y, n_x, n_z].
+    :param probe_real: 2D array for the real part of the probe.
+    :param probe_imag: 2D array for the imaginary part of the probe.
+    :param energy_ev:
+    :param psize_cm: size-3 vector with pixel size ([dy, dx, dz]).
+    :param free_prop_cm:
+    :return:
+    """
+    grid_shape = probe_real.shape[1:]
+    voxel_nm = np.array(psize_cm) * 1.e7
+    wavefront = probe_real + 1j * probe_imag
+
+    lmbda_nm = 1240. / energy_ev
+    dist_nm = dist_cm * 1e7
+
+    h = get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape)
+
+    wavefront = ifft2(ifftshift(fftshift(fft2(wavefront), axes=[1, 2]) * h, axes=[1, 2]))
+
+    return wavefront

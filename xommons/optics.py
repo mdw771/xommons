@@ -80,3 +80,20 @@ def depth_of_focus(psize_nm, energy_kev=None, lmbda_nm=None, prefactor=5.2, unit
         lmbda_nm = energy_to_wavelength(energy_kev)
 
     return prefactor * psize_nm ** 2 / lmbda_nm * unit_dict[unit]
+
+
+def fresnel_number(a_cm, dist_cm, energy_kev=None, lmbda_nm=None):
+    """
+    Calculate the Fresnel number.
+    :param a_cm: aperture size in cm; float
+    :param energy_kev: float
+    :param lmbda_nm: float
+    :return: float
+    """
+    assert not (energy_kev is None and lmbda_nm is None), 'Either energy_kev or lmbda_nm must be provided.'
+
+    if lmbda_nm is None:
+        lmbda_nm = energy_to_wavelength(energy_kev)
+
+    lmbda_cm = lmbda_nm * 1e-7
+    return a_cm ** 2 / (lmbda_cm * dist_cm)
