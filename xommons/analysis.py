@@ -31,7 +31,30 @@ def mse(obj, ref):
     return np.mean((obj - ref) ** 2)
 
 
-def ssim(obj, ref)
+def ssim(obj, ref, terms='lcs'):
+
+    ssim = 1
+    for term in terms:
+        if term == 'l':
+            mu_x = np.mean(obj)
+            mu_y = np.mean(ref)
+            c1 = (0.01 * (np.max([obj.max(), ref.max()]) - np.min([obj.min(), ref.min()]))) ** 2
+            ssim *= ((2 * mu_x * mu_y + c1) / (mu_x**2 + mu_y**2 + c1))
+        if term == 'c':
+            sigma_x = np.sqrt(np.var(obj))
+            sigma_y = np.sqrt(np.var(ref))
+            c2 = (0.03 * (np.max([obj.max(), ref.max()]) - np.min([obj.min(), ref.min()]))) ** 2
+            ssim *= ((2 * sigma_x * sigma_y + c2) / (sigma_x**2 + sigma_y**2 + c2)) ** 2
+        if term == 's':
+            t = np.vstack([obj.flatten(), ref.flatten()])
+            t = np.cov(t)
+            sigma_x = np.sqrt(t[0, 0])
+            sigma_y = np.sqrt(t[1, 1])
+            sigma_xy = t[0, 1]
+            c3 = (0.03 * (np.max([obj.max(), ref.max()]) - np.min([obj.min(), ref.min()]))) ** 2 / 2
+            ssim *= ((sigma_xy + c3) / (sigma_x * sigma_y + c3))
+    return ssim
+
 
 
 def generate_disk(shape, radius, anti_aliasing=5):
