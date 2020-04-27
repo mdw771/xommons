@@ -26,6 +26,14 @@ matplotlib.rcParams['pdf.fonttype'] = 'truetype'
 fontProperties = {'family': 'serif', 'serif': ['Times New Roman'], 'weight': 'normal', 'size': 12}
 plt.rc('font', **fontProperties)
 
+
+def mse(obj, ref):
+    return np.mean((obj - ref) ** 2)
+
+
+def ssim(obj, ref)
+
+
 def generate_disk(shape, radius, anti_aliasing=5):
     shape = np.array(shape)
     radius = int(radius)
@@ -88,6 +96,7 @@ def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', thresh
         radius_max = len(frc) + 1
     radius_ls = np.arange(1, radius_max, step_size)
 
+    plt.figure(figsize=(10, 8))
     plt.plot(radius_ls.astype(float) / radius_ls[-1], frc, label=os.path.basename(output_fname)[:-4])
     plt.xlabel('Spatial frequency (1 / Nyquist)')
     plt.ylabel('FRC')
@@ -98,6 +107,7 @@ def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', thresh
         plt.plot(radius_ls.astype(float) / radius_ls[-1], t, label='1/2-bit threshold')
     plt.legend()
     plt.savefig(output_fname, format='pdf')
+    plt.close()
 
 
 def gaussian_fit_2d(img, n_iter=1000, verbose=False):

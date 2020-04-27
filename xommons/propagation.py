@@ -65,7 +65,7 @@ def gen_mesh(max, shape):
     return res
 
 
-def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=True):
+def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=True, sign_convention=1):
     """Get Fresnel propagation kernel for TF algorithm.
        Note that the function uses the n = 1 - delta - i*beta and exp(-ikz) convention.
     Parameters:
@@ -80,19 +80,19 @@ def get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=True):
     v_max = 1. / (2. * voxel_nm[1])
     u, v = gen_mesh([v_max, u_max], grid_shape[0:2])
     if fresnel_approx:
-        H = np.exp(1j * PI * lmbda_nm * dist_nm * (u**2 + v**2))
+        H = np.exp(-sign_convention * 1j * PI * lmbda_nm * dist_nm * (u**2 + v**2))
     else:
         quad = 1 - lmbda_nm ** 2 * (u**2 + v**2)
         quad_inner = np.clip(quad, a_min=0, a_max=None)
         quad_inner = quad_inner + 0j
-        H = np.exp(-1j * 2 * PI * dist_nm / lmbda_nm * np.sqrt(quad_inner))
+        H = np.exp(sign_convention * 1j * 2 * PI * dist_nm / lmbda_nm * np.sqrt(quad_inner))
         # quad_outer = -np.clip(quad, a_min=None, a_max=0)
         # H = H * np.exp(2 * PI * dist_nm / lmbda_nm * np.sqrt(quad_outer))
 
     return H
 
 
-def get_kernel_ir(dist_nm, lmbda_nm, voxel_nm, grid_shape):
+def get_kernel_ir(dist_nm, lmbda_nm, voxel_nm, grid_shape, sign_convention=1):
 
     """
     Get Fresnel propagation kernel for IR algorithm.
@@ -111,13 +111,13 @@ def get_kernel_ir(dist_nm, lmbda_nm, voxel_nm, grid_shape):
     x = np.arange(xmin, xmin + size_nm[1], dx)
     y = np.arange(ymin, ymin + size_nm[0], dy)
     x, y = np.meshgrid(x, y)
-    h = np.exp(1j * k * dist_nm) / (1j * lmbda_nm * dist_nm) * np.exp(1j * k / (2 * dist_nm) * (x ** 2 + y ** 2))
+    h = np.exp(sign_convention * 1j * k * dist_nm) / (1j * lmbda_nm * dist_nm) * np.exp(sign_convention * 1j * k / (2 * dist_nm) * (x ** 2 + y ** 2))
     H = np.fft.fftshift(np.fft.fft2(h)) * voxel_nm[0] * voxel_nm[1]
 
     return H
 
 
-def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=False, pad=0):
+def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=True, pad=0, sign_convention=1):
     """
     Perform Fresnel propagation on a batch of wavefields.
     :param wavefield: complex wavefield with shape [n_batches, n_y, n_x].
@@ -139,7 +139,7 @@ def fresnel_propagate(wavefield, energy_ev, psize_cm, dist_cm, fresnel_approx=Fa
     size_nm = np.array(grid_shape) * voxel_nm
     dist_nm = dist_cm * 1e7
 
-    h = get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=fresnel_approx)
+    h = get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, fresnel_approx=fresnel_approx, sign_convention=sign_convention)
 
     wavefield = ifft2(ifftshift(fftshift(fft2(wavefield), axes=[1, 2]) * h, axes=[1, 2]))
     
@@ -168,7 +168,8 @@ def modulate_wavefield(wavefield, delta_slice, beta_slice, energy_ev, dist_cm):
     return wavefield
 
 
-def multislice_propagate(grid_delta_batch, grid_beta_batch, probe_real, probe_imag, energy_ev, psize_cm, free_prop_cm=None, return_intermediate=False):
+def multislice_propagate(grid_delta_batch, grid_beta_batch, probe_real, probe_imag, energy_ev, psize_cm,
+                         free_prop_cm=None, return_intermediate=False, sign_convention=1):
     """
     Perform multislice propagation on a batch of 3D objects.
     :param grid_delta_batch: 4D array for object delta with shape [n_batches, n_y, n_x, n_z].
@@ -194,7 +195,7 @@ def multislice_propagate(grid_delta_batch, grid_beta_batch, probe_real, probe_im
     delta_nm = voxel_nm[-1]
 
     # h = get_kernel_ir(delta_nm, lmbda_nm, voxel_nm, grid_shape)
-    h = get_kernel(delta_nm, lmbda_nm, voxel_nm, grid_shape)
+    h = get_kernel(delta_nm, lmbda_nm, voxel_nm, grid_shape, sign_convention=sign_convention)
     k = 2. * PI * delta_nm / lmbda_nm
 
     if return_intermediate:
@@ -220,10 +221,10 @@ def multislice_propagate(grid_delta_batch, grid_beta_batch, probe_real, probe_im
             crit_samp = lmbda_nm * dist_nm / l
             algorithm = 'TF' if mean_voxel_nm > crit_samp else 'IR'
             if algorithm == 'TF':
-                h = get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape)
+                h = get_kernel(dist_nm, lmbda_nm, voxel_nm, grid_shape, sign_convention=sign_convention)
                 wavefront = ifft2(ifftshift(fftshift(fft2(wavefront), axes=[1, 2]) * h, axes=[1, 2]))
             else:
-                h = get_kernel_ir(dist_nm, lmbda_nm, voxel_nm, grid_shape)
+                h = get_kernel_ir(dist_nm, lmbda_nm, voxel_nm, grid_shape, sign_convention=sign_convention)
                 wavefront = ifft2(ifftshift(fftshift(fft2(wavefront), axes=[1, 2]) * h, axes=[1, 2]))
 
     if return_intermediate:
