@@ -56,7 +56,6 @@ def ssim(obj, ref, terms='lcs'):
     return ssim
 
 
-
 def generate_disk(shape, radius, anti_aliasing=5):
     shape = np.array(shape)
     radius = int(radius)
@@ -80,14 +79,57 @@ def generate_ring(shape, radius, anti_aliasing=5):
     return disk1 - disk2
 
 
+def generate_shell(shape, radius):
+
+    radius = int(radius)
+    shape_y, shape_x, shape_z = shape
+    if shape_x % 2 == 1:
+        x = np.linspace(-radius, radius, radius * 2 + 3)
+    else:
+        x = np.linspace(-radius - 0.5, radius + 0.5, radius * 2 + 2)
+    if shape_z % 2 == 1:
+        z = np.linspace(-radius, radius, radius * 2 + 3)
+    else:
+        z = np.linspace(-radius - 0.5, radius + 0.5, radius * 2 + 2)
+    if shape_y % 2 == 1:
+        y = np.linspace(-radius, radius, radius * 2 + 3)
+    else:
+        y = np.linspace(-radius - 0.5, radius + 0.5, radius * 2 + 2)
+    xx, yy, zz = np.meshgrid(x, y, z)
+    a = abs(radius - np.sqrt(xx**2 + yy**2 + zz**2))
+    a = np.clip(a, 0, 0.8)
+    a = 0.8 - a
+    res = np.zeros([max([shape[i], a.shape[i]]) for i in range(3)])
+    center_y, center_x, center_z = [s // 2 for s in res.shape]
+    y_st = center_y - radius - 1
+    x_st = center_x - radius - 1
+    z_st = center_z - radius - 1
+    res[y_st:y_st + a.shape[0], x_st:x_st + a.shape[1], z_st:z_st + a.shape[2]] = a
+    for i in range(3):
+        if res.shape[i] > shape[i]:
+            slc = [slice(None), slice(None), slice(None)]
+            slc[i] = slice((res.shape[i] - shape[i]) // 2, -(res.shape[i] - shape[i]) // 2)
+            res = res[tuple(slc)]
+    return res
+
+
 def fourier_ring_correlation(obj, ref, step_size=1, save_path=None, save_mask=True, save_fname='fsc', threshold_curve=False):
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    radius_max = int(min(obj.shape) / 2)
-    f_obj = np_fftshift(fft2(obj))
-    f_ref = np_fftshift(fft2(ref))
+    if obj.ndim == 2:
+        fft_func = fft2
+        gen_mask = generate_ring
+        gen_kwargs = {'anti_aliasing: 2'}
+    elif obj.ndim == 3:
+        fft_func = fftn
+        gen_mask = generate_shell
+        gen_kwargs = {}
+
+    radius_max = min(obj.shape) // 2
+    f_obj = np_fftshift(fft_func(obj))
+    f_ref = np_fftshift(fft_func(ref))
     f_prod = f_obj * np.conjugate(f_ref)
     f_obj_2 = np.real(f_obj * np.conjugate(f_obj))
     f_ref_2 = np.real(f_ref * np.conjugate(f_ref))
@@ -97,11 +139,10 @@ def fourier_ring_correlation(obj, ref, step_size=1, save_path=None, save_mask=Tr
         np.save(os.path.join(save_path, 'radii.npy'), radius_ls)
 
     for rad in radius_ls:
-        print(rad)
         if os.path.exists(os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad)))):
             mask = dxchange.read_tiff(os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad))))
         else:
-            mask = generate_ring(obj.shape, rad, anti_aliasing=2)
+            mask = gen_mask(obj.shape, rad, **gen_kwargs)
             if save_mask:
                 dxchange.write_tiff(mask, os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad))),
                                     dtype='float32', overwrite=True)
@@ -212,3 +253,8 @@ def find_frc_crossing(frc, radius_max='auto', step_size=1):
     crossing = np.mean(cross)
     err = cross[-1] - cross[0]
     return crossing, err
+
+# if __name__ == '__main__':
+#     a = generate_shell([64, 64, 64], 5)
+#     plt.imshow(a[32])
+#     plt.show()
