@@ -154,7 +154,7 @@ def fourier_ring_correlation(obj, ref, step_size=1, save_path=None, save_mask=Tr
     return np.array(fsc_ls)
 
 
-def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', threshold_curve=True):
+def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', threshold_curve=True, show=False, save=True):
 
     if radius_max == 'auto':
         radius_max = len(frc) + 1
@@ -168,10 +168,17 @@ def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', thresh
     if threshold_curve:
         n_ls = 2 * np.pi * radius_ls
         t = 0.2071 + 1.9102 / np.sqrt(n_ls) / (1.2071 + 0.9102 / np.sqrt(n_ls))
-        plt.plot(radius_ls.astype(float) / radius_ls[-1], t, label='1/2-bit threshold')
+        a = plt.plot(radius_ls.astype(float) / radius_ls[-1], t, label='1/2-bit threshold')
     plt.legend()
-    plt.savefig(output_fname, format='pdf')
-    plt.close()
+    
+    if save:
+        plt.savefig(output_fname, format='pdf')
+        plt.close()
+    elif show:
+        plt.show()
+        plt.close()
+    else:
+        print('Plot is retained.')
 
 
 def gaussian_fit_2d(img, n_iter=1000, verbose=False):
