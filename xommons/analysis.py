@@ -94,6 +94,7 @@ def generate_shell(shape, radius):
     if shape_y % 2 == 1:
         y = np.linspace(-radius, radius, radius * 2 + 3)
     else:
+
         y = np.linspace(-radius - 0.5, radius + 0.5, radius * 2 + 2)
     xx, yy, zz = np.meshgrid(x, y, z)
     a = abs(radius - np.sqrt(xx**2 + yy**2 + zz**2))

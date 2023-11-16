@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import argparse
+import os
+
+import json
+import tifffile
+import numpy as np
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('fname')
+    parser.add_argument('--format', default='2idd')
+    args = parser.parse_args()
+
+    f = open(args.fname, 'r')
+    json_table = json.load(f)
+
+    f_meta = open('metadata.json', 'w')
+
+    if args.format == '2idd':
+        meta_dict = {}
+        for key in json_table.keys():
+            print(type(json_table[key]))
+            print(len(json_table[key]))
+            data = json_table[key]
+            if isinstance(data, list):
+                data = np.array(data)
+                tifffile.imwrite(key + '.tiff', data)
+            else:
+                meta_dict[key] = data
+        json.dump(meta_dict, f_meta)
+        f_meta.close()

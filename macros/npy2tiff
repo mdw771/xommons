@@ -7,7 +7,7 @@ import argparse
 import os
 import sys
 import numpy as np
-import dxchange
+import tifffile
 
 def main(arg):
 
@@ -18,11 +18,9 @@ def main(arg):
 
     a = np.load(args.file)
     if args.type == 'magnitude':
-        dxchange.write_tiff(abs(a), os.path.splitext(os.path.basename(args.file))[0] + '_mag', dtype='float32',
-                            overwrite=True)
+        tifffile.imwrite(os.path.splitext(os.path.basename(args.file))[0] + '_mag', abs(a), dtype='float32')
     elif args.type == 'phase':
-        dxchange.write_tiff(np.angle(a), os.path.splitext(os.path.basename(args.file))[0] + '_mag', dtype='float32',
-                            overwrite=True)
+        tifffile.imwrite(os.path.splitext(os.path.basename(args.file))[0] + '_mag', np.angle(a), dtype='float32')
     return
 
 if __name__ == '__main__':

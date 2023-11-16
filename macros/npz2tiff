@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import argparse
+import os
+import sys
+import numpy as np
+import tifffile
+
+def main(arg):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file")
+    args = parser.parse_args()
+
+    a = np.load(args.file)
+    print('Here are the keys in {}. Which one do you want to open?'.format(args.file))
+    print(list(a.keys()))
+    key = input()
+    dset = a[key]
+    print('The shape of the selected array is {}. Enter the indices for the slice that you want to dump. Separate '
+          'axes by comma and start/end within an axis by colon. To slice an entire axis, leave it blank or just put '
+          'a colon. '.format(dset.shape))
+    slicers = []
+    slicer_input = input()
+    print(slicer_input)
+    slicer_all_axes = [x for x in slicer_input.split(',')]
+    print(slicer_all_axes)
+    for slicer in slicer_all_axes:
+        if len(slicer) == 0 or slicer == ':':
+            slicers.append(slice(None))
+        elif ':' not in slicer:
+            slicers.append(int(slicer))
+        else:
+            start, end = [int(x) for x in slicer.split(':')]
+            slicers.append(slice(start, end))
+    data = dset[tuple(slicers)]
+    print('Writing an array of shape {}.'.format(data.shape))
+    tifffile.imwrite(os.path.splitext(args.file)[0] + '.tiff', data)
+
+
+if __name__ == '__main__':
+    main(sys.argv)
