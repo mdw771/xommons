@@ -17,10 +17,12 @@ def main(arg):
     args = parser.parse_args()
 
     a = np.load(args.file)
+    print('Shape: {}'.format(a.shape))
+    print('Dtype: {}'.format(a.dtype))
     if args.type == 'magnitude':
-        tifffile.imwrite(os.path.splitext(os.path.basename(args.file))[0] + '_mag', abs(a), dtype='float32')
+        tifffile.imwrite(os.path.splitext(os.path.basename(args.file))[0] + '_mag.tiff', abs(a))
     elif args.type == 'phase':
-        tifffile.imwrite(os.path.splitext(os.path.basename(args.file))[0] + '_mag', np.angle(a), dtype='float32')
+        tifffile.imwrite(os.path.splitext(os.path.basename(args.file))[0] + '_phase.tiff', np.angle(a))
     return
 
 if __name__ == '__main__':

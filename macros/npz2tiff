@@ -34,6 +34,12 @@ def main(arg):
             start, end = [int(x) for x in slicer.split(':')]
             slicers.append(slice(start, end))
     data = dset[tuple(slicers)]
+    if 'complex' in str(data.dtype):
+        complex_input = input('The values are {}. Do you want the (1) magnitude or (2) phase? '.format(str(data.dtype)))
+        if complex_input == 1:
+            data = abs(data)
+        else:
+            data = np.angle(data)
     print('Writing an array of shape {}.'.format(data.shape))
     tifffile.imwrite(os.path.splitext(args.file)[0] + '.tiff', data)
 
