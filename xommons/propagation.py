@@ -49,7 +49,10 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-from pyfftw.interfaces.numpy_fft import fft2, ifft2, fftshift, ifftshift
+try:
+    from pyfftw.interfaces.numpy_fft import fft2, ifft2, fftshift, ifftshift
+except:
+    from numpy.fft import fft2, ifft2, fftshift, ifftshift
 from tqdm import trange
 
 from xommons.phys import *

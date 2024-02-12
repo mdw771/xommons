@@ -11,7 +11,7 @@ except:
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import fourier_shift
 import numpy as np
-import dxchange
+import tifffile
 try:
     import tensorflow as tf
 except:
@@ -114,15 +114,57 @@ def generate_shell(shape, radius):
     return res
 
 
-def fourier_ring_correlation(obj, ref, step_size=1, save_path=None, save_mask=True, save_fname='fsc', threshold_curve=False):
+def fourier_ring_correlation(obj, ref, n_pts=100):
+    assert obj.ndim == 2
+    u, v = np.fft.fftfreq(obj.shape[0]), np.fft.fftfreq(obj.shape[1])
+    vv, uu = np.meshgrid(v, u)
 
-    if not os.path.exists(save_path):
+    # fig, ax = plt.subplots(1, 2)
+    # ax[0].imshow(obj)
+    # ax[1].imshow(ref)
+    # plt.show()
+
+    f_obj = np.fft.fft2(obj)
+    f_ref = np.fft.fft2(ref)
+    f_prod = f_obj * np.conjugate(f_ref)
+    f_obj_2 = np.real(f_obj * np.conjugate(f_obj))
+    f_ref_2 = np.real(f_ref * np.conjugate(f_ref))
+
+    # fig, ax = plt.subplots(1, 2)
+    # ax[0].imshow(np.log10(np.abs(np.fft.fftshift(f_obj))))
+    # ax[1].imshow(np.log10(np.abs(np.fft.fftshift(f_ref))))
+    # plt.show()
+
+    rads = np.linspace(0, 0.5, n_pts + 1)[1:]
+    rad_interval = rads[1] - rads[0]
+
+    frc_list = []
+    for r in rads:
+        d = np.sqrt(uu ** 2 + vv ** 2)
+        mask = 1 - np.clip(np.abs(d - r) * (1 / rad_interval / 0.5), 0, 1)
+
+        # plt.imshow(np.fft.fftshift(mask))
+        # plt.show()
+
+        frc = abs(np.sum(f_prod * mask))
+        frc /= np.sqrt(np.sum(f_obj_2 * mask) * np.sum(f_ref_2 * mask))
+        frc_list.append(frc)
+    frc_list = np.array(frc_list)
+    return frc_list, rads
+
+def fourier_ring_correlation_square(obj, ref, step_size=1, save_path=None, save_mask=True, save_fname='fsc',
+                                    threshold_curve=False):
+    """
+    Fourier ring/shell correlation for square images.
+    """
+
+    if save_path is not None and not os.path.exists(save_path):
         os.makedirs(save_path)
 
     if obj.ndim == 2:
         fft_func = fft2
         gen_mask = generate_ring
-        gen_kwargs = {'anti_aliasing: 2'}
+        gen_kwargs = {'anti_aliasing': 2}
     elif obj.ndim == 3:
         fft_func = fftn
         gen_mask = generate_shell
@@ -140,19 +182,25 @@ def fourier_ring_correlation(obj, ref, step_size=1, save_path=None, save_mask=Tr
         np.save(os.path.join(save_path, 'radii.npy'), radius_ls)
 
     for rad in radius_ls:
-        if os.path.exists(os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad)))):
-            mask = dxchange.read_tiff(os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad))))
+        if save_path is not None and os.path.exists(os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad)))):
+            mask = tifffile.imread(os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad))))
         else:
             mask = gen_mask(obj.shape, rad, **gen_kwargs)
             if save_mask:
-                dxchange.write_tiff(mask, os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad))),
-                                    dtype='float32', overwrite=True)
+                tifffile.imwrite(mask, os.path.join(save_path, 'mask_rad_{:04d}.tiff'.format(int(rad))))
         fsc = abs(np.sum(f_prod * mask))
         fsc /= np.sqrt(np.sum(f_obj_2 * mask) * np.sum(f_ref_2 * mask))
         fsc_ls.append(fsc)
         if save_path is not None:
             np.save(os.path.join(save_path, '{}.npy'.format(save_fname)), fsc_ls)
     return np.array(fsc_ls)
+
+
+def get_half_bit_threshold_curve(n):
+    radius_ls = np.arange(1, n + 1)
+    n_ls = 2 * np.pi * radius_ls
+    t = 0.2071 + 1.9102 / np.sqrt(n_ls) / (1.2071 + 0.9102 / np.sqrt(n_ls))
+    return t
 
 
 def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', threshold_curve=True, show=False, save=True):
@@ -181,6 +229,26 @@ def plot_frc(frc, radius_max='auto', step_size=1, output_fname='frc.pdf', thresh
     else:
         print('Plot is retained.')
 
+
+def calculate_radial_psd(img, n_pts=100, log=False):
+    fimg = np.fft.fft2(img)
+    fimg = fimg / fimg[0, 0]
+    fimg = np.abs(fimg) ** 2
+    if log:
+        fimg = np.log10(fimg)
+    fy = np.fft.fftfreq(fimg.shape[0])
+    fx = np.fft.fftfreq(fimg.shape[1])
+    fxx, fyy = np.meshgrid(fx, fy)
+    f = np.sqrt(fxx ** 2 + fyy ** 2)
+    rads = np.linspace(0, 0.5, n_pts + 1)[1:]
+    rad_interval = rads[1] - rads[0]
+    psd_list = []
+    for r in rads:
+        mask = np.logical_and(f >= r - rad_interval * 0.5, f < r + rad_interval * 0.5)
+        v = np.mean(fimg[mask])
+        psd_list.append(v)
+    psd_list = np.array(psd_list)
+    return psd_list, rads
 
 def gaussian_fit_2d(img, n_iter=1000, verbose=False):
 

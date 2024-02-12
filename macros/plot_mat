@@ -37,10 +37,6 @@ except:
 plt.figure()
 im = plt.imshow(np.angle(obj))
 plt.colorbar(im)
-
-#print(f['outputs/fourier_error_out'][...])
-#plt.figure()
-#plt.plot(f['outputs/fourier_error_out'][...].reshape(-1))
 plt.show()
 
 if save_tiff:
