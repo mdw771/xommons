@@ -234,8 +234,6 @@ def calculate_radial_psd(img, n_pts=100, log=False):
     fimg = np.fft.fft2(img)
     fimg = fimg / fimg[0, 0]
     fimg = np.abs(fimg) ** 2
-    if log:
-        fimg = np.log10(fimg)
     fy = np.fft.fftfreq(fimg.shape[0])
     fx = np.fft.fftfreq(fimg.shape[1])
     fxx, fyy = np.meshgrid(fx, fy)
@@ -248,6 +246,8 @@ def calculate_radial_psd(img, n_pts=100, log=False):
         v = np.mean(fimg[mask])
         psd_list.append(v)
     psd_list = np.array(psd_list)
+    if log:
+        psd_list = np.log10(psd_list)
     return psd_list, rads
 
 def gaussian_fit_2d(img, n_iter=1000, verbose=False):

@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import matplotlib.pyplot as plt
+import tqdm
+import scipy.io
+
+import sys
+import os
+import argparse
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('filename')
+args = parser.parse_args()
+
+f = scipy.io.loadmat(args.filename)
+
+def display_item_summary(key, item):
+    if not hasattr(item, 'items'):
+        print(key)
+        if hasattr(item, 'shape'):
+            print('    Shape: {}'.format(item.shape))
+    else:
+        for k, v in item.items():
+            display_item_summary(k, v)
+
+display_item_summary(None, f)
+
