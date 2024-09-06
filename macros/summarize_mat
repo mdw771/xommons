@@ -22,6 +22,8 @@ def display_item_summary(key, item):
         print(key)
         if hasattr(item, 'shape'):
             print('    Shape: {}'.format(item.shape))
+        if hasattr(item, 'dtype'):
+            print('    Dtype: {}'.format(item.dtype))
     else:
         for k, v in item.items():
             display_item_summary(k, v)
