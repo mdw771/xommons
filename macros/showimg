@@ -24,13 +24,18 @@ if __name__ == '__main__':
     else:
         raise Exception('Unknown extension: {}'.format(ext))
 
+    if img.ndim == 2:
+        img = img[None, ...]
     if np.iscomplexobj(img):
-        fig, ax = plt.subplots(1, 2)
-        ax[0].imshow(abs(img))
-        ax[0].set_title('magnitude')
-        ax[1].imshow(np.angle(img))
-        ax[1].set_title('phase')
+        fig, ax = plt.subplots(len(img), 2, squeeze=False)
     else:
-        fig, ax = plt.subplots(1, 1)
-        ax.imshow(img)
+        fig, ax = plt.subplots(len(img), 1, squeeze=False)
+    for i, im in enumerate(img):
+        if np.iscomplexobj(img):
+            ax[i, 0].imshow(abs(im))
+            ax[i, 0].set_title('magnitude')
+            ax[i, 1].imshow(np.angle(im))
+            ax[i, 1].set_title('phase')
+        else:
+            ax[i, 0].imshow(im)
     plt.show()
