@@ -7,25 +7,35 @@ import os
 import numpy as np
 import torch
 import tifffile
+import matplotlib.pyplot as plt
 import ptychi.image_proc as ip
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('filename')
+parser.add_argument('--show', action='store_true')
 args = parser.parse_args()
 
-arr = tifffile.imread(args.filename)
+arr = np.load(args.filename)
 arr = torch.tensor(arr)
 if arr.ndim == 2:
     arr = arr[None, ...]
 
+res = []
 for i_slice in range(arr.shape[0]):
     arr_slice = arr[i_slice, ...]
-    arr_slice = ip.unwrap_phase_2d(
-        arr_slice, 
-        image_grad_method="fourier_differentiation", 
+    phase = ip.unwrap_phase_2d(
+        arr_slice,
+        image_grad_method="fourier_differentiation",
         image_integration_method="fourier"
     )
-    arr[i_slice, ...] = arr_slice
+    res.append(phase)
 
-tifffile.imwrite(os.path.splitext(args.filename)[0] + "_unwrapped_phase.tiff", arr.cpu().numpy())
+if args.show:
+    for i_slice in range(res.shape[0]):
+        plt.imshow(res[i_slice].cpu().numpy())
+        plt.colorbar()
+        plt.show()
+
+res = torch.stack(res)
+tifffile.imwrite(os.path.splitext(args.filename)[0] + "_unwrapped_phase.tiff", res.cpu().numpy())
