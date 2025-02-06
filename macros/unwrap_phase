@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import argparse
+import os
+
+import numpy as np
+import torch
+import tifffile
+import ptychi.image_proc as ip
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('filename')
+args = parser.parse_args()
+
+arr = tifffile.imread(args.filename)
+arr = torch.tensor(arr)
+if arr.ndim == 2:
+    arr = arr[None, ...]
+
+for i_slice in range(arr.shape[0]):
+    arr_slice = arr[i_slice, ...]
+    arr_slice = ip.unwrap_phase_2d(
+        arr_slice, 
+        image_grad_method="fourier_differentiation", 
+        image_integration_method="fourier"
+    )
+    arr[i_slice, ...] = arr_slice
+
+tifffile.imwrite(os.path.splitext(args.filename)[0] + "_unwrapped_phase.tiff", arr.cpu().numpy())
