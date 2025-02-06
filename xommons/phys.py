@@ -49,7 +49,11 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import numpy as np
-import xraylib
+
+try:
+    import xraylib
+except:
+    print("Cannot import xraylib.")
 
 
 def energy_to_wavelength(energy_kev):
