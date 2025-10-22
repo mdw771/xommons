@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import numpy as np
+import matplotlib.pyplot as plt
+import tifffile
+
+import argparse
+import os
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("fname")
+    parser.add_argument("--component", choices=["real", "imag", "mag", "phase"], default="mag")
+    args = parser.parse_args()
+
+    fname = args.fname
+    ext = os.path.splitext(fname)[-1]
+    
+    if ext == ".tiff":
+        img = tifffile.imread(fname)
+    elif ext == ".npy":
+        img = np.load(fname)
+    else:
+        raise Exception("Unknown extension: {}".format(ext))
+
+    if img.ndim == 2:
+        img = img[None, None, ...]
+    if img.ndim == 3:
+        img = img[None, ...]
+        
+    if args.component == "real":
+        img = np.real(img)
+    elif args.component == "imag":
+        img = np.imag(img)
+    elif args.component == "mag":
+        img = np.abs(img)
+    elif args.component == "phase":
+        img = np.angle(img)
+   
+    fig, ax = plt.subplots(img.shape[0], img.shape[1], squeeze=False)
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            ax[i, j].imshow(img[i, j])
+            if i == 0:
+                ax[i, j].set_title(f"Mode {j}")
+            if j == 0:
+                ax[i, j].set_ylabel(f"OPR mode {i}")
+    
+    plt.tight_layout()
+    plt.show()
