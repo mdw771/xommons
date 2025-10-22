@@ -16,14 +16,22 @@ parser.add_argument("--pattern", default="*.tif*")
 parser.add_argument("--output", default="combined.tiff")
 args = parser.parse_args()
 
-images = []
+image_fnames = []
 dir = args.dir
 for root, dirs, files in os.walk(dir):
     for file in files:
-        if fnmatch.fnmatch(file, args.pattern):
-            print(os.path.join(root, file))
-            images.append(tifffile.imread(os.path.join(root, file)))
+        if fnmatch.fnmatch(os.path.join(root, file), args.pattern):
+            image_fnames.append(os.path.join(root, file))
+image_fnames.sort()
+print(image_fnames)
+images = [tifffile.imread(f) for f in image_fnames]
 
-images = np.array(images)
+if len(images) == 0:
+    raise ValueError("No matching image found.")
 
-tifffile.imsave(os.path.join(dir, args.output), images)
+if images[0].ndim == 2:
+    images = np.array(images)
+else:
+    images = np.concat(images)
+
+tifffile.imwrite(os.path.join(dir, args.output), images)
