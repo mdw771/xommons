@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import argparse
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import h5py
+import matplotlib.pyplot as plt
+import xommons.plot as xp
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("fname")
+    parser.add_argument("var", choices=["object", "probe", "positions"])
+    args = parser.parse_args()
+
+    fname = args.fname
+    with h5py.File(fname, "r") as f:
+        if args.var == "object":
+            object = f["object"][...]
+            fig = xp.plot_ptychi_object(object)
+            plt.show()
+            plt.close(fig)
+        elif args.var == "probe":
+            probe = f["probe"][...]
+            fig = xp.plot_ptychi_probe(probe)
+            plt.show()
+            plt.close(fig)
+        elif args.var == "positions":
+            positions = f["positions"][...]
+            fig = xp.plot_ptychi_positions(positions)
+            plt.show()
+            plt.close(fig)
