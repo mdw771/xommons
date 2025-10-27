@@ -39,7 +39,12 @@ if __name__ == "__main__":
     elif args.component == "phase":
         img = np.angle(img)
    
-    fig, ax = plt.subplots(img.shape[0], img.shape[1], squeeze=False)
+    fig, ax = plt.subplots(
+        img.shape[0], 
+        img.shape[1], 
+        squeeze=False,
+        figsize=(4 * img.shape[1], 4 * img.shape[0])
+    )
     for i in range(img.shape[0]):
         for j in range(img.shape[1]):
             ax[i, j].imshow(img[i, j])
