@@ -8,13 +8,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import h5py
 import matplotlib.pyplot as plt
+import numpy as np
 import xommons.plot as xp
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("fname")
-    parser.add_argument("var", choices=["object", "probe", "positions"])
+    parser.add_argument("var", choices=["object", "probe", "positions", "pixelsize"])
     args = parser.parse_args()
 
     fname = args.fname
@@ -26,11 +27,14 @@ if __name__ == "__main__":
             plt.close(fig)
         elif args.var == "probe":
             probe = f["probe"][...]
-            fig = xp.plot_ptychi_probe(probe)
+            fig = xp.plot_ptychi_probe(abs(probe))
             plt.show()
             plt.close(fig)
         elif args.var == "positions":
-            positions = f["positions"][...]
+            positions = np.stack([f["probe_position_y_m"][...], f["probe_position_x_m"][...]], axis=-1)
             fig = xp.plot_ptychi_positions(positions)
             plt.show()
             plt.close(fig)
+        elif args.var == "pixelsize":
+            pixelsize = f["object"].attrs["pixel_height_m"], f["object"].attrs["pixel_width_m"]
+            print(f"Pixel height: {pixelsize[0]} m, pixel width: {pixelsize[1]} m")
