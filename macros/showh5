@@ -15,6 +15,10 @@ def print_h5_group_recursive(grp: h5py.Group | h5py.File, indent: int = 0):
                 print(f"{indent_string}Dataset: {key} = {grp[key][...]}")
             else:
                 print(f"{indent_string}Dataset: {key}: {grp[key]}")
+            if len(grp[key].attrs) > 0:
+                print(f"{indent_string}  Attributes:")
+                for attr_name, attr_value in grp[key].attrs.items():
+                    print(f"{indent_string}    {attr_name}: {attr_value}")
 
 
 def show_hdf5(f: h5py.File):
