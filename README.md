@@ -20,3 +20,5 @@ First clone this repository.
 ## Post-installation
 
 Run `./setup.sh` from the repository root to append the `macros` folder to your `PATH`. Restart your shell (or source `~/.bashrc`) before invoking the macros directly from the terminal.
+
+If you encounter permission issues running any macro, try adding execution permisision to that script using `chmod +x /path/to/xommons/macros/script`.
