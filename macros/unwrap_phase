@@ -8,7 +8,10 @@ import numpy as np
 import torch
 import tifffile
 import matplotlib.pyplot as plt
-import ptychi.image_proc as ip
+try:
+    import ptychi.image_proc as ip
+except ImportError:
+    raise ImportError("uwnrap_phase requires Pty-Chi. Install it with `pip install ptychi`")
 
 
 parser = argparse.ArgumentParser()
