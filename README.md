@@ -1,24 +1,42 @@
-*Xommons* is a collection of convenient tools for synchrotron data examination, assessment and analysis. It offers a range of utility functions that can be integrated into your workflow as well as a toolbox of macros that can be run from terminal as if they are bash commands. For example:
+*Xommons* is a collection of convenient tools for synchrotron data examination, assessment and analysis. It offers a range of utility functions that can be integrated into your workflow as well as a uv-managed command-line toolbox. For example:
 
 ```bash
-showptychodus ptychodus_para.hdf5 probe
+xommons showptychodus ptychodus_para.hdf5 probe
 ```
 will display the probes in a Ptychodus parameter HDF5 file.
 
 ## Installation
 
-First clone this repository.
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then install the package as a tool:
 
-### Option 1
-- `pip install .`
+```bash
+uv tool install .
+```
 
-### Option 2
-- Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
-- In the project root directory, do `uv venv`
-- `uv sync`
+## Usage
 
-## Post-installation
+If `uv` tells you its tool bin directory is not on `PATH`, run:
 
-Run `./setup.sh` from the repository root to append the `macros` folder to your `PATH`. Restart your shell (or source `~/.bashrc`) before invoking the macros directly from the terminal.
+```bash
+uv tool update-shell
+```
 
-If you encounter permission issues running any macro, try adding execution permisision to that script using `chmod +x /path/to/xommons/macros/script`.
+After that, use the single launcher with subcommands:
+
+```bash
+xommons showh5 somefile.hdf5
+xommons showprobe probe.npy
+```
+
+The same installed tool can be invoked through `uvx`:
+
+```bash
+uvx xommons showh5 somefile.hdf5
+```
+
+`unwrap_phase` has heavier optional dependencies. If you need that subcommand, install the tool with the `unwrap-phase` extra:
+
+```bash
+uv tool install '.[unwrap-phase]'
+uvx xommons unwrap_phase phase.npy
+```

@@ -1,49 +1,36 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import numpy as np
-import matplotlib.pyplot as plt
-import tifffile
-
 import argparse
-import os
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 import xommons.plot as xp
+from xommons.tools._image import load_image_file
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("fname")
     parser.add_argument("--component", choices=["real", "imag", "mag", "phase"], default="mag")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    fname = args.fname
-    ext = os.path.splitext(fname)[-1]
-    
-    if ext == ".tiff":
-        img = tifffile.imread(fname)
-    elif ext == ".npy":
-        img = np.load(fname)
-    else:
-        raise Exception("Unknown extension: {}".format(ext))
-
+    img = load_image_file(args.fname)
     if img.ndim == 2:
         img = img[None, None, ...]
     if img.ndim == 3:
         img = img[None, ...]
-        
+
     if args.component == "real":
         img = np.real(img)
     elif args.component == "imag":
         img = np.imag(img)
     elif args.component == "mag":
         img = np.abs(img)
-    elif args.component == "phase":
+    else:
         img = np.angle(img)
-   
-    fig = xp.plot_ptychi_probe(img)
+
+    xp.plot_ptychi_probe(img)
     plt.show()
+    return 0

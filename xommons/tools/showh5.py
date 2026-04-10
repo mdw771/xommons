@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
+
 import h5py
 
 
@@ -21,14 +23,12 @@ def print_h5_group_recursive(grp: h5py.Group | h5py.File, indent: int = 0):
                     print(f"{indent_string}    {attr_name}: {attr_value}")
 
 
-def show_hdf5(f: h5py.File):
-    print_h5_group_recursive(f)
-
-
-if __name__ == "__main__":
-    import argparse
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("filename")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+
     with h5py.File(args.filename, "r") as f:
-        show_hdf5(f)
+        print_h5_group_recursive(f)
+
+    return 0

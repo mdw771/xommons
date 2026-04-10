@@ -2,32 +2,27 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+
 import xommons.plot as xp
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("fname")
     parser.add_argument("var", choices=["object", "probe", "positions", "pixelsize"])
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    fname = args.fname
-    with h5py.File(fname, "r") as f:
+    with h5py.File(args.fname, "r") as f:
         if args.var == "object":
-            object = f["object"][...]
-            fig = xp.plot_ptychi_object(object)
+            fig = xp.plot_ptychi_object(f["object"][...])
             plt.show()
             plt.close(fig)
         elif args.var == "probe":
-            probe = f["probe"][...]
-            fig = xp.plot_ptychi_probe(abs(probe))
+            fig = xp.plot_ptychi_probe(np.abs(f["probe"][...]))
             plt.show()
             plt.close(fig)
         elif args.var == "positions":
@@ -35,6 +30,9 @@ if __name__ == "__main__":
             fig = xp.plot_ptychi_positions(positions)
             plt.show()
             plt.close(fig)
-        elif args.var == "pixelsize":
-            pixelsize = f["object"].attrs["pixel_height_m"], f["object"].attrs["pixel_width_m"]
-            print(f"Pixel height: {pixelsize[0]} m, pixel width: {pixelsize[1]} m")
+        else:
+            pixel_height = f["object"].attrs["pixel_height_m"]
+            pixel_width = f["object"].attrs["pixel_width_m"]
+            print(f"Pixel height: {pixel_height} m, pixel width: {pixel_width} m")
+
+    return 0
