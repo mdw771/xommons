@@ -62,7 +62,7 @@ def plot_ptychi_object(object) -> plt.Figure:
     return fig
 
 
-def plot_ptychi_positions(positions) -> plt.Figure:
+def plot_ptychi_positions(positions, invert_y=True) -> plt.Figure:
     """
     Plot the positions of the ptychographic object.
 
@@ -71,6 +71,10 @@ def plot_ptychi_positions(positions) -> plt.Figure:
     positions : np.ndarray
         The (n_positions, 2) positions to plot. Positions are given
         in row-major order, i.e. (y, x).
+    invert_y : bool, optional
+        Whether to flip the y-axis. Default is True, which puts smaller
+        y values at the top of the image, consistent with object image
+        display.
 
     Returns
     -------
@@ -82,5 +86,7 @@ def plot_ptychi_positions(positions) -> plt.Figure:
     ax.set_aspect("equal")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
+    if invert_y:
+        ax.invert_yaxis()
     plt.tight_layout()
     return fig
