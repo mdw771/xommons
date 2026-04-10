@@ -7,10 +7,10 @@ will display the probes in a Ptychodus parameter HDF5 file.
 
 ## Installation
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then install the package as a tool:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then install the package from PyPI as a tool:
 
 ```bash
-uv tool install .
+uv tool install xommons
 ```
 
 ## Usage
@@ -37,6 +37,6 @@ uvx xommons showh5 somefile.hdf5
 `unwrap_phase` has heavier optional dependencies. If you need that subcommand, install the tool with the `unwrap-phase` extra:
 
 ```bash
-uv tool install '.[unwrap-phase]'
+uv tool install 'xommons[unwrap-phase]'
 uvx xommons unwrap_phase phase.npy
 ```
